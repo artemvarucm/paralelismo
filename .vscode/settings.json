@@ -7,6 +7,7 @@
         "wait.h": "c",
         "types.h": "c",
         "unistd.h": "c",
-        "semaphore.h": "c"
+        "semaphore.h": "c",
+        "getopt_core.h": "c"
     }
 }
