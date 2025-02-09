@@ -1,0 +1,116 @@
+Artem Vartanov
+
+EJERCICIO 1
+-----------
+1. Ejecuta make en la línea de comandos y comprueba las órdenes que ejecuta para construir el proyecto. ¿qué comando(s) se invoca(n)? ¿Se ha generado algún fichero ejecutable como resultado? Ejecuta ls para ver el contenido del directorio.
+
+El comando que se invoca es:
+gcc -g -Wall example.c -o example
+
+Al ejecutar "ls" sale:
+example  example.c  Makefile
+
+Se ha generado el archivo ejecutable "example"
+
+--------------------------------------------
+2. Tras construir el proyecto, ejecuta los siguientes comandos, e indica la salida generada por pantalla. ¿A que se debe este comportamiento? Consulta el código fuente usando un editor de textos. 
+
+Comando: ./example
+Salida: Usage: ./example <first-name> <last-name>
+Explicacion: Se necesitan argumentos al invocar el programa, como hay menos de 3 argumentos (en este caso el único argumento es el nombre del archivo), se muestra este mensaje.
+
+Comando: ./example John
+Salida: Usage: ./example <first-name> <last-name>
+Explicacion: Lo mismo que antes, nos faltaría especificar el argumento que se usa como last-name.
+
+Comando: ./example John Smith
+Salida: Hi John Smith!
+Explicacion: Como hemos especificado el numero de argumentos correcto, se muestra por pantalla la linea con el saludo, el segundo argumento (first-name) y el tercer argumento (last-name).
+
+--------------------------------------------
+3. Vuelve a ejecutar el comando make en más ocasiones. ¿Se vuelve a generar el fichero ejecutable invocando al compilador gcc? ¿Por qué? 
+
+No, porque no hemos modificado el código fuente (example.c).
+
+--------------------------------------------
+4. Marca el fichero example.c como modificado ejecutando touch example.c. Después ejecuta de nuevo make . ¿Qué diferencia hay con la última vez que lo ejecutaste? ¿Por qué?
+
+Ahora sí ha actualizado el archivo example (resultado de compilacion de example.c), porque la fecha de actualización de example.c es posterior a la fecha de creacion del ejecutable example.
+
+--------------------------------------------
+5. Ejecuta la orden make clean. ¿Qué ha sucedido?
+Se ha eliminado el archivo "example".
+
+EJERCICIO 3
+-----------
+1. ¿Qué cadena de caracteres debes utilizar como tercer argumento de getopt()?
+La cadena es "hel:"
+
+--------------------------------------------
+2. ¿Qué línea de código utilizas para leer el argumento title?
+options.title = argv[optind];
+
+EJERCICIO 4
+-----------
+1. Al usar la opción -x del programa, el comando indicado como argumento se pasa encerrado entre comillas dobles en el caso de que este, a su vez, acepte argumentos, como por ejemplo ls -l. ¿Qué ocurre si el argumento de -x no se pasa entrecomillado? ¿Funciona correctamente el lanzamiento del programa ls -l si se encierra entre comillas simples en lugar de dobles? Nota: Para ver las diferencias prueba a ejecutar el siguiente comando: echo $HOME
+
+Comando: ./run_commands -x ls -l
+Resultado:
+./run_commands: invalid option -- 'l'
+Makefile  run_commands  run_commands.c  run_commands.o  test1
+Explicacion: Ejecuta solo ls, sin el flag y trata la l como flag de run_commands
+
+Utilizar comillas singulares en vez de dobles funciona, pero tiene diferencias, como al usar variables. Por eso, para ls -l los resultados coinciden, pero para los siguientes, no:
+
+Comando: ./run_commands -x "echo $HOME"
+Resultado: /home/usuarioso
+Explicacion:
+Reemplaza la variable $HOME con el valor de entorno
+
+
+Comando: ./run_commands -x 'echo $HOME'
+Resultado: $HOME
+Explicacion:
+No reemplaza la variable $HOME con el valor de entorno
+
+--------------------------------------------
+2. ¿Es posible utilizar execlp() en lugar de execvp() para ejecutar el comando pasado como parámetro a la función launch_command() ? En caso afirmativo, indica las posibles limitaciones derivadas del uso de execlp() en este contexto.
+
+No se podría usar en principio, porque en el caso de execlp hace falta saber el número de argumentos, algo que en este caso no puede ser fijo.
+
+Se podría utilizar un montón de ifs para implementarlo, comprobando el tamaño de los argumentos, pero no es una opción flexible, ya que no podremos prever todos los casos (programas que pueden aceptar miles de argumentos, como el programa de escribir palabras en un archivo).
+
+--------------------------------------------
+3. ¿Qué ocurre al ejecutar el comando "echo hello > a.txt" con ./run_commands -x ? ¿y con el comando "cat run_commands.c | grep int" ? En caso de que los comandos no se ejecuten correctamente indica el motivo.
+
+Comando: ./run_commands -x "echo hello > a.txt"
+Resultado: hello > a.txt
+Explicacion:
+No crea el fichero a.txt porque no hemos añadido este caso de escribir en el archivo.
+
+Comando: ./run_commands -x "cat run_commands.c | grep int"
+Resultado:
+(Contenido del archivo run_commands.c)
+cat: '|': No existe el fichero o el directorio
+cat: grep: No existe el fichero o el directorio
+cat: int: No existe el fichero o el directorio
+Explicacion:
+No puede identificar que hay dos comandos ejecutando, por ello piensa que son argumentos.
+
+
+EJERCICIO 5
+-----------
+1. Probar a crear solamente una variable para el argumento de todos los hilos, dándole el valor correspondiente a cada hilo antes de la llamada a pthread_create. Explicar qué sucede y cuál es la razón.
+
+El resultado de la ejecución contiene errores:
+
+Hilo ID: 139865419577088, Numero de hilo: 2, Prioridad: P
+Hilo ID: 139865402791680, Numero de hilo: 2, Prioridad: P
+Hilo ID: 139865411184384, Numero de hilo: 2, Prioridad: P
+double free or corruption (fasttop)
+Hilo ID: 139865394398976, Numero de hilo: 0, Prioridad: 
+double free or corruption (fasttop)
+Hilo ID: 139865386006272, Numero de hilo: 0, Prioridad: 
+Abortado
+
+Debido a que liberamos la memoria dinámica dentro del hilo, la variable no se puede acceder en el caso de los hilos que muestren por pantalla valores después de que la memoria se ha liberado.
