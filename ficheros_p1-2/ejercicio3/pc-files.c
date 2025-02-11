@@ -15,13 +15,16 @@ void* consumir(void* arg);
 #define MAX_SBUFFER_SIZE 4
 char* shared_buffer[MAX_SBUFFER_SIZE];
 
-sem_t items; 
-sem_t gaps;
-
 pthread_mutex_t mutex;
+pthread_cond_t cond_prod, cond_cons;
+
 
 pthread_t consumidor;
 pthread_t productor;
+
+int ridx=0;
+int widx=0;
+int nr_items=0;
 
 int main(int argc, char* argv[])
 {
@@ -60,9 +63,6 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-	sem_init(&items, 0, 0); 
-	sem_init(&gaps, 0, MAX_SBUFFER_SIZE);
-
 	pthread_mutex_init(&mutex, NULL);
 	pthread_create(&productor, NULL, producir, &fdIn);
 	pthread_create(&consumidor, NULL, consumir, &fdOut);
@@ -81,26 +81,30 @@ int main(int argc, char* argv[])
 
 void* producir(void* arg) {
 	int fd = *(int*)arg;
-	int i = 0;
 	char *linea;
+
+	pthread_mutex_lock(&mutex);
+
+	while(nr_items==MAX_SBUFFER_SIZE){
+		pthread_cond_wait(&cond_prod, &mutex);
+	}
 
 	while((linea = loadline(fd)) != NULL){
 		char *p = malloc(strlen(linea) + 1);
 		strcpy(p, linea);
+
+		shared_buffer[widx] = p;
+
 		free(linea);
 
-		sem_wait(&gaps);
-		pthread_mutex_lock(&mutex);
-		shared_buffer[i] = p;
-		pthread_mutex_unlock(&mutex);
-		sem_post(&items);
-
-		i = (i + 1) % MAX_SBUFFER_SIZE;
+		widx = (widx + 1) % MAX_SBUFFER_SIZE;
+		nr_items++;
 	}
 
-	sem_wait(&gaps);
-	shared_buffer[i] = NULL;
-	sem_post(&items);
+	shared_buffer[widx] = NULL;
+	
+	pthread_cond_signal(&cond_cons);
+	pthread_mutex_unlock(&mutex);
 
     return NULL;
 }
@@ -108,18 +112,18 @@ void* producir(void* arg) {
 
 void* consumir(void* arg) {
 	int fd = *(int*)arg;
-	int i = 0;
 	char *linea;
 	
 	while (1) {
-		sem_wait(&items);
 		pthread_mutex_lock(&mutex);
-		linea = shared_buffer[i];
+		while(nr_items==0){
+			pthread_cond_wait(&cond_cons, &mutex);
+		}
+		linea = shared_buffer[ridx];
         
-
 		if (linea==NULL){
 			pthread_mutex_unlock(&mutex); 
-            sem_post(&items);
+			pthread_cond_signal(&cond_prod);
 			break;
 		}
 
@@ -130,10 +134,12 @@ void* consumir(void* arg) {
         }
 
 		free(linea);
-		pthread_mutex_unlock(&mutex);
-		sem_post(&gaps);
 
-		i = (i + 1) % MAX_SBUFFER_SIZE;
+		ridx = (ridx + 1) % MAX_SBUFFER_SIZE;
+		nr_items--;
+
+		pthread_cond_signal(&cond_prod);
+		pthread_mutex_unlock(&mutex);
 	}
 
     return NULL;
