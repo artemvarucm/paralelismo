@@ -8,7 +8,7 @@
 
 void* producir(void* arg);
 void* consumir(void* arg);
-int consumirLinea(FILE *fd);
+char* consumirLinea();
 void producirLinea(char* linea);
 
 #define MAX_LINE_LENGTH 256
@@ -103,7 +103,19 @@ void* producir(void* arg) {
 
 void* consumir(void* arg) {
 	FILE* fd = (FILE*) arg;
-	while(consumirLinea(fd)){
+	while(1) {
+		char* linea = consumirLinea();
+		if (linea == NULL) {
+			break;
+		} else {
+			int len = strlen(linea) + 1;
+			if (fwrite(linea, sizeof(char), len, fd) < len) {
+				perror("Error al escribir en el archivo");
+				exit(1);
+			}
+
+			free(linea);
+		}
 	}
 
     return NULL;
@@ -114,7 +126,7 @@ void producirLinea(char* linea) {
 	while(nr_items == MAX_SBUFFER_SIZE){
 		pthread_cond_wait(&cond_prod, &lock);
 	}
-
+	//printf("Produce %s", linea);
 	if (linea == NULL) {
 		shared_buffer[widx] = NULL;
 	} else {
@@ -130,23 +142,21 @@ void producirLinea(char* linea) {
 	pthread_mutex_unlock(&lock);
 }
 
-int consumirLinea(FILE *fd) {
+char* consumirLinea() {
 	pthread_mutex_lock(&lock);
 
 	while(nr_items==0){
 		pthread_cond_wait(&cond_cons, &lock);
 	}
-	char *linea = shared_buffer[ridx];
-	int noParar = (linea != NULL);
-	if (noParar) {
-		int len = strlen(linea) + 1;
-		
-		if (fwrite(linea, sizeof(char), len, fd) < len) {
-			perror("Error al escribir en el archivo");
-			exit(1);
-		}
+	char *linea = NULL;
+	
+	if (shared_buffer[ridx] != NULL) {
+		int len = strlen(shared_buffer[ridx]) + 1;
+		linea = (char* )malloc(len);
+		strcpy(linea, shared_buffer[ridx]);
+		//printf("Consume %s", linea);
 
-		free(linea);
+		free(shared_buffer[ridx]);
 	}
 
 	ridx = (ridx + 1) % MAX_SBUFFER_SIZE;
@@ -155,5 +165,5 @@ int consumirLinea(FILE *fd) {
 	pthread_cond_signal(&cond_prod);
 	pthread_mutex_unlock(&lock);
 
-	return noParar;
+	return linea;
 }
