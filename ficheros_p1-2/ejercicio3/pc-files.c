@@ -89,8 +89,8 @@ void* producir(void* arg) {
 	char* linea = (char* )malloc(MAX_LINE_LENGTH);
 
 	while(fgets(linea, MAX_LINE_LENGTH, fd) != NULL){
-		//printf("%s", linea);
 		producirLinea(linea);
+		//usleep(500000); para probar como va con operaciones lentas
 	}
 
 	producirLinea(NULL);
