@@ -99,12 +99,21 @@ void* producir(void* arg) {
 
 		widx = (widx + 1) % MAX_SBUFFER_SIZE;
 		nr_items++;
+
+		pthread_cond_signal(&cond_cons);
+		pthread_mutex_unlock(&mutex);
 	}
 
+	pthread_mutex_lock(&mutex);
+
+	while(nr_items==MAX_SBUFFER_SIZE){
+		pthread_cond_wait(&cond_prod, &mutex);
+	}
 	shared_buffer[widx] = NULL;
-	
 	pthread_cond_signal(&cond_cons);
 	pthread_mutex_unlock(&mutex);
+	
+	
 
     return NULL;
 }
