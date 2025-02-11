@@ -52,19 +52,19 @@ int main(int argc, char* argv[])
 	if (input) {
 		fdIn = fopen(input, "r");
 		if (fdIn == NULL) {
-			perror("Error al abrir el archivo de entrada\n");
+			perror("Error al abrir el archivo de entrada");
 			return 1;
 		}
 	}
 
 	FILE* fdOut = fopen(output, "w");
     if (fdOut == NULL) {
-        perror("Error al abrir el archivo de salida\n");
+        perror("Error al abrir el archivo de salida");
         return 1;
     }
 
 	if (pthread_mutex_init(&lock, NULL) != 0) { 
-        printf("\n mutex init has failed\n"); 
+        perror("Mutex init has failed"); 
         return 1; 
     } 
 
@@ -92,6 +92,7 @@ void* producir(void* arg) {
 		//printf("%s", linea);
 		producirLinea(linea);
 	}
+
 	producirLinea(NULL);
 
     return NULL;
@@ -127,7 +128,7 @@ void producirLinea(char* linea) {
 
 int consumirLinea(FILE *fd) {
 	pthread_mutex_lock(&lock);
-	
+
 	while(nr_items==0){
 		pthread_cond_wait(&cond_cons, &lock);
 	}
@@ -137,7 +138,8 @@ int consumirLinea(FILE *fd) {
 		int len = strlen(linea) + 1;
 		
 		if (fwrite(linea, sizeof(char), len, fd) < len) {
-			perror("Error al escribir en el archivo\n");
+			perror("Error al escribir en el archivo");
+			exit(1);
 		}
 
 		free(linea);
