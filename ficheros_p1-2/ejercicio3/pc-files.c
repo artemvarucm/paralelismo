@@ -95,6 +95,8 @@ void* producir(void* arg) {
 
 	producirLinea(NULL);
 
+	// liberamos memoria
+	free(linea);
     return NULL;
 }
 
@@ -112,10 +114,12 @@ void producirLinea(char* linea) {
 	while(nr_items == MAX_SBUFFER_SIZE){
 		pthread_cond_wait(&cond_prod, &lock);
 	}
-	shared_buffer[widx] = (char* )malloc(MAX_LINE_LENGTH);
+
 	if (linea == NULL) {
 		shared_buffer[widx] = NULL;
 	} else {
+		int len = strlen(linea) + 1;
+		shared_buffer[widx] = (char* )malloc(len);
 		strcpy(shared_buffer[widx], linea);
 	}
 
