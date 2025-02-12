@@ -11,11 +11,13 @@
 sem_t *elements;  /* # of elements in the buffer */
 sem_t *gaps;     /* # of free gaps in the buffer */
 
+sem_t *consumer_up;
+
 void Consumer(int *buffer)
 {
     int pos = 0;  /* read index */
     int i, item;
-
+    sem_post(consumer_up);
     for(i=0; i < DATA_TO_CONSUME; i++ )  {
         sem_wait(elements);
         item = buffer[pos];
@@ -65,6 +67,17 @@ void main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    consumer_up = sem_open("CONSUMER_UP", 0);
+
+    if (consumer_up == SEM_FAILED) {
+        perror("sem_open (consumer_up)");
+        sem_close(elements);
+        sem_close(gaps);
+        munmap(buffer, MAX_BUFFER * sizeof(int));
+        close(shd);
+        exit(EXIT_FAILURE);
+    }
+
     /* consumer's core processing */
     Consumer(buffer);
 
@@ -75,4 +88,5 @@ void main(int argc, char *argv[]) {
     /* close semaphores */
     sem_close(elements);
     sem_close(gaps);
+    sem_close(consumer_up);
 }

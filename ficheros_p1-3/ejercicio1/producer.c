@@ -11,12 +11,13 @@
 sem_t *elements;  /* # of elements in the buffer */
 sem_t *gaps;     /* # of free gaps in the buffer */
 
+sem_t *consumer_up;
 void Producer(int *buffer)
 {
     int pos = 0;  /* write index */
     int item;     /* data to produce */
     int i;
-
+    sem_wait(consumer_up);
     for(i=0; i < DATA_TO_PRODUCE; i++ ) {
         item = i; /* Producing number */
         sem_wait(gaps);
@@ -38,6 +39,7 @@ void main(int argc, char *argv[]) {
      **/
     sem_unlink("ELEMENTS");
     sem_unlink("GAPS");
+    sem_unlink("CONSUMER_UP");
 
     /* the producer creates the file */
     shd = open("/tmp/BUFFER", O_CREAT| O_RDWR | O_TRUNC, 0777);
@@ -85,6 +87,19 @@ void main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    consumer_up = sem_open("CONSUMER_UP", O_CREAT, 0700, 0);
+
+    if (consumer_up == SEM_FAILED) {
+        perror("sem_open (consumer_up)");
+        sem_close(elements);
+        sem_unlink("ELEMENTS");
+        sem_close(gaps);
+        sem_unlink("GAPS");
+        munmap(buffer, MAX_BUFFER * sizeof(int));
+        close(shd);
+        exit(EXIT_FAILURE);
+    }
+
     /* core producer's code */
     Producer(buffer);
 
@@ -95,6 +110,8 @@ void main(int argc, char *argv[]) {
 
     sem_close(elements);
     sem_close(gaps);
+    sem_close(consumer_up);
     sem_unlink("ELEMENTS");
     sem_unlink("GAPS");
+    sem_unlink("CONSUMER_UP");
 }
