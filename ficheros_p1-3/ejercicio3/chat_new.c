@@ -72,81 +72,85 @@ void write_fifo(int fd_fifo, struct chat_message *message, int size) {
      }
 }
 
-void fifo_send (struct thread_data* info) {
+void fifo_send(struct thread_data* info) {
+     struct chat_message message;
+     int fd_fifo;
+     const int size = sizeof(struct chat_message);
+ 
+     fd_fifo = open(info->path_fifo, O_WRONLY);
+     if (fd_fifo < 0) {
+         perror(info->path_fifo);
+         exit(1);
+     }
+     printf("Conexión de envío establecida!!\n");
+ 
+     message.type = USERNAME_MSG;
+     strcpy(message.contenido, info->username);
+     write_fifo(fd_fifo, &message, size);
+     
+     printf("> ");
+     fflush(stdout);
+     
+     while (1) {
+ 
+         if (fgets(message.contenido, MAX_CHARS_MSG, stdin) == NULL) {
+             break; 
+         }
+ 
+         message.nr_bytes = strlen(message.contenido);
+         message.type = (message.nr_bytes == 0) ? END_MSG : NORMAL_MSG;
+         write_fifo(fd_fifo, &message, size);
+ 
+         if (message.type == END_MSG) {
+             break;
+         }
+         printf("> ");
+         fflush(stdout);
+     }
+ 
+     close(fd_fifo);
+ }
+ 
+
+
+
+void fifo_receive (struct thread_data* info) {
      struct chat_message message;
      int fd_fifo=0;
      int bytes=0,wbytes=0;
      const int size=sizeof(struct chat_message);
+     char *nombre_interlocutor[MAX_CHARS_MSG];
 
-     fd_fifo=open(info->path_fifo,O_WRONLY);
+     fd_fifo=open(info->path_fifo,O_RDONLY);
 
      if (fd_fifo<0) {
           perror(info->path_fifo);
           exit(1);
      }
-     printf("Conexión de envío establecida!!\n");
-     /* Bucle de envío de datos a través del FIFO
-     - Leer de la entrada estandar hasta fin de fichero
-     */
-     message.type = USERNAME_MSG;
-     strcpy(message.contenido, info->username);
-     write_fifo(fd_fifo, &message, size);
-     
-     while((bytes=read(0,message.contenido,MAX_CHARS_MSG))>=0) {
-          // bytes == 0 indica EOF
-          message.nr_bytes = bytes;
-          message.type = (bytes == 0) ? END_MSG : NORMAL_MSG;
-          write_fifo(fd_fifo, &message, size);
-
-          if (bytes == 0) {
-               break;
+     printf("Conexión de recepción establecida!!\n");
+     while((bytes=read(fd_fifo,&message,size))==size) {
+          printf("\33[2K\r");
+          if (message.type == NORMAL_MSG) {
+               /* Write to stdout */
+               printf("%s dice: %s", nombre_interlocutor, message.contenido);
+          } else if (message.type == USERNAME_MSG) {
+               strcpy(nombre_interlocutor, message.contenido);
+          } else {
+               printf("Conexión finalizada por %s!!\n", nombre_interlocutor);
+               close(fd_fifo);
+               exit(1);
           }
+          printf("> ");
+          fflush(stdout);
      }
 
-     if (bytes < 0) {
-          fprintf(stderr,"Error when reading from stdin\n");
+     if (bytes > 0){
+          fprintf(stderr,"Can't read the whole register\n");
+          exit(1);
+     }else if (bytes < 0) {
+          fprintf(stderr,"Error when reading from the FIFO\n");
           exit(1);
      }
-     
+          
      close(fd_fifo);
-}
-
-
-
-void fifo_receive (struct thread_data* info) {
-  struct chat_message message;
-  int fd_fifo=0;
-  int bytes=0,wbytes=0;
-  const int size=sizeof(struct chat_message);
-  char *nombre_interlocutor[MAX_CHARS_MSG];
-
-  fd_fifo=open(info->path_fifo,O_RDONLY);
-
-  if (fd_fifo<0) {
-	perror(info->path_fifo);
-	exit(1);
-  }
-  printf("Conexión de recepción establecida!!\n");
-  while((bytes=read(fd_fifo,&message,size))==size) {
-     if (message.type == NORMAL_MSG) {
-          /* Write to stdout */
-          printf("%s dice: %s", nombre_interlocutor, message.contenido);
-     } else if (message.type == USERNAME_MSG) {
-          strcpy(nombre_interlocutor, message.contenido);
-     } else {
-          printf("Conexión finalizada por %s!!\n", nombre_interlocutor);
-          close(fd_fifo);
-          exit(1);
-     }
- }
-
-  if (bytes > 0){
-	fprintf(stderr,"Can't read the whole register\n");
-	exit(1);
-  }else if (bytes < 0) {
-	fprintf(stderr,"Error when reading from the FIFO\n");
-	exit(1);
-  }
-	
-   close(fd_fifo);
 }
