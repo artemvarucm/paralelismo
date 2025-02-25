@@ -9,6 +9,7 @@
         "unistd.h": "c",
         "semaphore.h": "c",
         "getopt_core.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "err.h": "c"
     }
 }
