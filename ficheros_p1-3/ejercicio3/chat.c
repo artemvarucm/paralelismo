@@ -22,7 +22,6 @@ typedef enum  {
 } message_type_t;
 
 struct chat_message{
-     unsigned int nr_bytes;
      char contenido[MAX_CHARS_MSG]; //Cadena de caracteres (acabada en '\0) 
      message_type_t type;	
 };
@@ -43,7 +42,7 @@ void write_fifo(int fd_fifo, struct chat_message * message, int size);
 
 int main(int argc, char* argv[])
 {
-     if (argc<4){
+     if (argc < 4) {
           fprintf(stderr,"Usage: %s <usuario> <ruta-fifo-emisor> <ruta-fifo-receptor>\n",argv[0]);	
           return 1;
      }
@@ -75,7 +74,6 @@ void write_fifo(int fd_fifo, struct chat_message *message, int size) {
 void fifo_send (struct thread_data* info) {
      struct chat_message message;
      int fd_fifo=0;
-     int bytes=0,wbytes=0;
      const int size=sizeof(struct chat_message);
 
      fd_fifo=open(info->path_fifo,O_WRONLY);
@@ -97,23 +95,17 @@ void fifo_send (struct thread_data* info) {
      fflush(stdout);
      
 
-     while((bytes=read(0,message.contenido,MAX_CHARS_MSG))>=0) {
-          // bytes == 0 indica EOF
-          message.nr_bytes = bytes;
-          message.type = (bytes == 0) ? END_MSG : NORMAL_MSG;
+     while(fgets(message.contenido, MAX_CHARS_MSG, stdin) != NULL) {
+          message.type = NORMAL_MSG;
           write_fifo(fd_fifo, &message, size);
 
-          if (bytes == 0) {
-               break;
-          }
           printf("> ");
           fflush(stdout);
      }
 
-     if (bytes < 0) {
-          fprintf(stderr,"Error when reading from stdin\n");
-          exit(1);
-     }
+     // enviamos mensaje EOF
+     message.type = END_MSG;
+     write_fifo(fd_fifo, &message, size);
      
      close(fd_fifo);
 }
@@ -123,7 +115,7 @@ void fifo_send (struct thread_data* info) {
 void fifo_receive (struct thread_data* info) {
   struct chat_message message;
   int fd_fifo=0;
-  int bytes=0,wbytes=0;
+  int bytes=0;
   const int size=sizeof(struct chat_message);
   char *nombre_interlocutor[MAX_CHARS_MSG];
 
@@ -145,7 +137,7 @@ void fifo_receive (struct thread_data* info) {
      } else {
           printf("Conexión finalizada por %s!!\n", nombre_interlocutor);
           close(fd_fifo);
-          exit(1);
+          exit(0);
      }
      printf("> ");
      fflush(stdout);
