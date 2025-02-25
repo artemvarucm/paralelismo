@@ -84,7 +84,7 @@ void fifo_send (struct thread_data* info) {
           perror(info->path_fifo);
           exit(1);
      }
-     write(1, "Conexión de envío establecida!!\n", 35);
+     printf("Conexión de envío establecida!!\n");
      /* Bucle de envío de datos a través del FIFO
      - Leer de la entrada estandar hasta fin de fichero
      */
@@ -98,7 +98,7 @@ void fifo_send (struct thread_data* info) {
           message.nr_bytes = bytes;
           write_fifo(fd_fifo, &message, size);
      }
-     
+
      if (bytes < 0) {
           fprintf(stderr,"Error when reading from stdin\n");
           exit(1);
@@ -126,9 +126,13 @@ void fifo_receive (struct thread_data* info) {
   while((bytes=read(fd_fifo,&message,size))==size) {
      if (message.type == NORMAL_MSG) {
           /* Write to stdout */
-          printf("%s dice: %s\n", nombre_interlocutor, message.contenido);
+          printf("%s dice: %s", nombre_interlocutor, message.contenido);
      } else if (message.type == USERNAME_MSG) {
           strcpy(nombre_interlocutor, message.contenido);
+     } else {
+          printf("Conexión finalizada por %s!!\n", nombre_interlocutor);
+          fclose(fd_fifo);
+          exit(1);
      }
  }
 
