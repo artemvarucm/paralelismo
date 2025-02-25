@@ -1,0 +1,22 @@
+-- Ej.1
+openat(AT_FDCWD, "/tmp/fifo0", O_WRONLY)
+
+-- Ej.2
+La llamada del read (en un caso del fifo en otro caso de la entrada estandar)
+
+-- Ej.3
+openat(AT_FDCWD, "/tmp/fifo0", O_RDONLY)
+
+-- Ej.4
+-- ¿Qué sucede al introducir una cadena acabada en '\n' en
+    la terminal del emisor (lanzado de forma interactiva)?
+
+Se envía con el \n al final.
+
+-- ¿Se espera el programa a construir un paquete de datos “completo"
+    o envía la cadena tecleada directamente a pesar de ser más corta? 
+
+La cadena tecleada se convierte en un paquete de datos completo, pero se envía directamente.
+
+-- ¿De qué tamaño es ese paquete enviado?
+ TAMAÑO 36 (EL TAMAÑO REAL DE LA INFORMACIÓN ES MENOR)
