@@ -92,11 +92,15 @@ void fifo_send (struct thread_data* info) {
      strcpy(message.contenido, info->username);
      write_fifo(fd_fifo, &message, size);
      
-     // Enviamos mensajes normales a partir de aqui
-     message.type = NORMAL_MSG;
-     while((bytes=read(0,message.contenido,MAX_CHARS_MSG))>0) {
+     while((bytes=read(0,message.contenido,MAX_CHARS_MSG))>=0) {
+          // bytes == 0 indica EOF
           message.nr_bytes = bytes;
+          message.type = (bytes == 0) ? END_MSG : NORMAL_MSG;
           write_fifo(fd_fifo, &message, size);
+
+          if (bytes == 0) {
+               break;
+          }
      }
 
      if (bytes < 0) {
@@ -131,7 +135,7 @@ void fifo_receive (struct thread_data* info) {
           strcpy(nombre_interlocutor, message.contenido);
      } else {
           printf("Conexión finalizada por %s!!\n", nombre_interlocutor);
-          fclose(fd_fifo);
+          close(fd_fifo);
           exit(1);
      }
  }
