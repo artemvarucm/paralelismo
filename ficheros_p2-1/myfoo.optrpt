@@ -1,0 +1,46 @@
+Begin optimization report for: foo
+
+LOOP BEGIN at myfoo.c (7, 2)
+    remark #15300: LOOP WAS VECTORIZED
+    remark #15305: vectorization support: vector length 4
+LOOP END
+
+LOOP BEGIN at myfoo.c (7, 2)
+<Remainder loop for vectorization>
+LOOP END
+=================================================================
+
+---- Begin Inlining Report ----
+Option Values:
+  inline-threshold: 225
+  inlinehint-threshold: 325
+  inlinecold-threshold: 45
+  inlineoptsize-threshold: 15
+
+COMPILE FUNC: foo
+   -> DELETE: __svml_sinf4 myfoo.c(8,12)
+   -> DELETE: __svml_sinf1 myfoo.c(7,2)
+
+---- End Inlining Report ------
+Register allocation report for: foo
+FUNCTION BEGIN
+ LOOP1 BEGIN at (myfoo.c:7:2)
+ LOOP1 END
+ LOOP1 BEGIN at (myfoo.c:7:2)
+ LOOP1 END
+
+Hardware registers used
+ Reserved : 4 [ rip mxcsr rsp ssp  ]
+ Available : 26 [ rax rbp rcx r8 r9 r10 r11 r13 zmm1 zmm2 zmm3 zmm4 zmm5 zmm6 zmm7 zmm9 zmm10 zmm11 zmm12 zmm13 zmm14 zmm15 k0_k1 k2_k3 k4_k5 k6_k7  ]
+ Callee Saved : 4 [ rbx r14 r15 r12  ]
+ Assigned : 10 [ eflags rbx rdi rdx rsi r12 r14 r15 zmm0 zmm8  ]
+
+Routine stack 
+ Variables : 0 Bytes
+   Read Count : 0
+   Write Count : 0
+ Spills : 0 Bytes
+   Read Count : 0
+   Write Count : 0
+
+FUNCTION END
