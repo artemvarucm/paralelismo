@@ -2,7 +2,7 @@
 #define CSV_DATASET_H
 
 typedef struct {
-    double *X;
+    double **X; // lista de listas, X[columna][fila]
     int *y;
     char **labels;
     int n_features;

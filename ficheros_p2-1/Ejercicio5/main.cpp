@@ -26,8 +26,9 @@ int classify(CSVData train_data, double *queryX, int k, double *distances, int *
     
     // Compute distances
     for (int j = 0; j < train_data.n_features; j++) {
+        double *column = train_data.X[j];
         for (int i = 0; i < train_data.n_samples; i++) {
-            double diff = train_data.X[j * train_data.n_samples + i] - queryX[j];
+            double diff = column[i] - queryX[j];
             distances[i] += diff * diff;
             //distances[i] = euclideanDistance(train_data.X[j], queryX, train_data.n_features);
             //labels[i] = train_data.y[i];
@@ -111,7 +112,7 @@ int main() {
     for (int i = 0; i < test_data.n_samples; i++) {
         double *X_test = (double *)malloc(test_data.n_features * sizeof(double));
         for (int j = 0; j < test_data.n_features; j++) {
-            X_test[j] = test_data.X[j * test_data.n_samples + i];
+            X_test[j] = test_data.X[j][i];
         }
         
         y_pred[i]= classify(train_data, X_test, k, distances, labels);

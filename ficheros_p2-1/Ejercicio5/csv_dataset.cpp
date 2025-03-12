@@ -41,15 +41,14 @@ CSVData read_csv(const char *filename) {
     data.n_samples = n_samples;
 
     //data.samples = (Tsample*)malloc(n_samples * sizeof(Tsample));
-    data.X = (double*)malloc(n_samples * sizeof(double) * n_features);
+    data.X = (double**)malloc(sizeof(double*) * n_features);
     data.y = (int*)malloc(n_samples * sizeof(int));
-    //data.samples = (Tsample*)malloc(n_samples * sizeof(Tsample));
     data.labels = (char **)malloc((n_features + 1) * sizeof(char *));
 
-/*
-    for (int i = 0; i < n_samples; i++) {
-        data.samples[i].X = (double *)malloc(n_features * sizeof(double));
-    }*/
+
+    for (int i = 0; i < n_features; i++) {
+        data.X[i] = (double *)malloc(n_samples * sizeof(double));
+    }
 
     // Read the header again and store labels
     if (fgets(buffer, sizeof(buffer), file)) {
@@ -70,7 +69,7 @@ CSVData read_csv(const char *filename) {
         while (token) {
             if (col < n_features) {
                 //data.samples[row].X[col] = atof(token);
-                data.X[col * data.n_samples + row] = atof(token);
+                data.X[col][row] = atof(token);
             } else {
                 data.y[row] = atoi(token);
             }
@@ -96,6 +95,9 @@ void free_csv_data(CSVData data) {
     }
     
     if (data.X) {
+        for (int i = 0; i < data.n_samples; i++) {
+            free(data.X[i]);
+        }
         free(data.X);
         free(data.y);
     }
