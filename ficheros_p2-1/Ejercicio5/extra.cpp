@@ -3,8 +3,8 @@
 #include <time.h>
 #include <string.h>
 #include "extra.h"
-
-void train_test_split(CSVData data, CSVData *train, CSVData *test, float test_size, int random_state) {
+#include <csignal>
+void train_test_split(CSVData data, CSVData *train, CSVData *test, double test_size, int random_state) {
     // Extract values of data
     int n_samples = data.n_samples;
     int n_features = data.n_features;
@@ -24,9 +24,10 @@ void train_test_split(CSVData data, CSVData *train, CSVData *test, float test_si
         test->labels[i] = strdup(data.labels[i]);
     }
     
-    train->samples = (Tsample*)malloc(train->n_samples * sizeof(Tsample));
-    test->samples  = (Tsample*)malloc(test->n_samples  * sizeof(Tsample));
-
+    train->X = (double*)malloc(train->n_samples * sizeof(double) * n_features);
+    train->y = (int*)malloc(train->n_samples * sizeof(int));
+    test->X = (double*)malloc(test->n_samples * sizeof(double) * n_features);
+    test->y = (int*)malloc(test->n_samples * sizeof(int));
     // Initialize random seed
     srand(random_state);
 
@@ -46,20 +47,18 @@ void train_test_split(CSVData data, CSVData *train, CSVData *test, float test_si
     // Split data into training and testing sets
     for (int i = 0; i < train_count; i++) {
         int idx = indices[i];
-        train->samples[i].X = (float *)malloc(n_features*sizeof(float*));
         for (int j = 0; j < n_features; j++) {
-            train->samples[i].X[j] = data.samples[idx].X[j];
+            train->X[j * train->n_samples + i] = data.X[j * n_samples + idx];
         }
-        train->samples[i].y = data.samples[idx].y;
+        train->y[i] = data.y[idx];
     }
 
     for (int i = 0; i < test_count; i++) {
         int idx = indices[train_count + i];
-        test->samples[i].X = (float *)malloc(n_features*sizeof(float*));
         for (int j = 0; j < n_features; j++) {
-            test->samples[i].X[j] = data.samples[idx].X[j];
+            test->X[j * test->n_samples + i] = data.X[j * n_samples + idx];
         }
-        test->samples[i].y = data.samples[idx].y;
+        test->y[i] = data.y[idx];
     }
     free(indices);
 }
