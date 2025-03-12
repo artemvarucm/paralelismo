@@ -53,7 +53,7 @@ void train_test_split(CSVData data, CSVData *train, CSVData *test, double test_s
     for (int i = 0; i < train_count; i++) {
         int idx = indices[i];
         for (int j = 0; j < n_features; j++) {
-            train->X[j][i] = data.X[j][i];
+            train->X[j][i] = data.X[j][idx];
         }
         train->y[i] = data.y[idx];
     }
@@ -61,7 +61,7 @@ void train_test_split(CSVData data, CSVData *train, CSVData *test, double test_s
     for (int i = 0; i < test_count; i++) {
         int idx = indices[train_count + i];
         for (int j = 0; j < n_features; j++) {
-            test->X[j][i] = data.X[j][i];
+            test->X[j][i] = data.X[j][idx];
         }
         test->y[i] = data.y[idx];
     }

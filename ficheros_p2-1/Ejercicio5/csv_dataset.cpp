@@ -95,7 +95,7 @@ void free_csv_data(CSVData data) {
     }
     
     if (data.X) {
-        for (int i = 0; i < data.n_samples; i++) {
+        for (int i = 0; i < data.n_features; i++) {
             free(data.X[i]);
         }
         free(data.X);

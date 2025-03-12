@@ -109,14 +109,15 @@ int main() {
     
     // Classify each test sample
     int k = 4;
+    double *X_test = (double *)malloc(test_data.n_features * sizeof(double));
     for (int i = 0; i < test_data.n_samples; i++) {
-        double *X_test = (double *)malloc(test_data.n_features * sizeof(double));
         for (int j = 0; j < test_data.n_features; j++) {
             X_test[j] = test_data.X[j][i];
         }
         
         y_pred[i]= classify(train_data, X_test, k, distances, labels);
     }
+    free(X_test);
     
     clock_t end = clock();
     double duration = (double)(end - start) / CLOCKS_PER_SEC;
