@@ -1,5 +1,5 @@
 CC = icpx
-CFLAGS = -O2 -qopenmp
+CFLAGS = -O3 -qopenmp -qopt-report=2
 
 # Source files
 SOURCES = main.cpp csv_dataset.cpp extra.cpp
