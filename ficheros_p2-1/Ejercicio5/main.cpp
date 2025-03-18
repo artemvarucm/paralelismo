@@ -7,7 +7,9 @@
 #include "extra.h"
 #include <immintrin.h>
 
+
 // Compute Euclidean distance
+/*
 float euclideanDistance(float *a, float *b, int n_features) {
     float sum = 0.0f;
     for (int i = 0; i < n_features; i++) {
@@ -16,6 +18,7 @@ float euclideanDistance(float *a, float *b, int n_features) {
     }
     return sqrtf(sum);
 }
+*/
 
 // K-Nearest Neighbors Classification
 int classify(CSVData train_data, float *queryX, int k, float *distances, int *labels) {
