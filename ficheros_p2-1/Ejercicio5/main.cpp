@@ -40,7 +40,7 @@ int classify(CSVData train_data, float *queryX, int k, float *distances, int *la
 
             sse_distances = _mm_load_ps(&distances[i]);  
             sse_distances = _mm_add_ps(sse_distances, sse_squared);  
-            _mm_store_ps(&distances[i], sse_distances);  
+            _mm_storeu_ps(&distances[i], sse_distances);  
         }
         for (; i < train_data.n_samples; i++) {
             float diff = column[i] - queryX[j];
@@ -105,7 +105,7 @@ int main() {
     setbuf(stdout, NULL);
 
     // Read dataset
-    CSVData data = read_csv("Datasets/KNN_Large_Dataset.csv");
+    CSVData data = read_csv("./Datasets/KNN_Large_Dataset.csv");
 
     // Split dataset into training and testing
     CSVData train_data, test_data;
