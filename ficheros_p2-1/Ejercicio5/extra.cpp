@@ -4,7 +4,7 @@
 #include <string.h>
 #include "extra.h"
 #include <csignal>
-void train_test_split(CSVData data, CSVData *train, CSVData *test, double test_size, int random_state) {
+void train_test_split(CSVData data, CSVData *train, CSVData *test, float test_size, int random_state) {
     // Extract values of data
     int n_samples = data.n_samples;
     int n_features = data.n_features;
@@ -24,9 +24,9 @@ void train_test_split(CSVData data, CSVData *train, CSVData *test, double test_s
         test->labels[i] = strdup(data.labels[i]);
     }
     
-    train->X = (double**)malloc(sizeof(double) * n_features);
+    train->X = (float**)malloc(sizeof(float*) * n_features);
     train->y = (int*)malloc(train->n_samples * sizeof(int));
-    test->X = (double**)malloc(sizeof(double) * n_features);
+    test->X = (float**)malloc(sizeof(float*) * n_features);
     test->y = (int*)malloc(test->n_samples * sizeof(int));
     // Initialize random seed
     srand(random_state);
@@ -45,8 +45,8 @@ void train_test_split(CSVData data, CSVData *train, CSVData *test, double test_s
     }
 
     for (int i = 0; i < n_features; i++) {
-        train->X[i] = (double *)malloc(train->n_samples * sizeof(double*));
-        test->X[i] = (double *)malloc(test->n_samples * sizeof(double*));
+        train->X[i] = (float *)malloc(train->n_samples * sizeof(float*));
+        test->X[i] = (float *)malloc(test->n_samples * sizeof(float*));
     }
 
     // Split data into training and testing sets
