@@ -2,6 +2,8 @@
 # Prerequisites
 *.d
 *.DS_Store
+*.icx
+*.optrpt
 
 # Object files
 *.o

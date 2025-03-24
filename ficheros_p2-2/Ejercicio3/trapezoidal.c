@@ -44,6 +44,7 @@ double Trap(double a, double b, int n, double h) {
 	int k;
 
 	integral = 0.0;
+	#pragma omp parallel for schedule(static, 5) private(area,k) reduction(+:integral)
 	for (k = 1; k <= n; k++) {
 		area = h*(f(a+k*h)+f(a+(k-1)*h))/2.0;
 		integral+=area;

@@ -7,11 +7,11 @@ long comp_fib_numbers(int n)
 	if ( n == 0 || n == 1 ) return(1);
 	if ( n<20 ) return(comp_fib_numbers(n-1) +comp_fib_numbers(n-2));
 
-	#pragma omp task ...
+	#pragma omp task shared(fnm1) firstprivate(n)
 	{fnm1 = comp_fib_numbers(n-1);}
-	#pragma omp task ...
+	#pragma omp task shared(fnm2) firstprivate(n)
 	{fnm2 = comp_fib_numbers(n-2);}
-	#pragma omp ...
+	#pragma omp taskwait
 	fn = fnm1 + fnm2;
 
 	return(fn);
@@ -30,11 +30,11 @@ int main(int argc, char* argv[]) {
 
 	double start = omp_get_wtime();
 
-#pragma omp parallel
-{
-	#pragma omp single 
-	fibo = comp_fib_numbers(n);
-}
+	#pragma omp parallel
+	{
+		#pragma omp single
+		fibo = comp_fib_numbers(n);
+	}
 
 	double stop = omp_get_wtime();
 
