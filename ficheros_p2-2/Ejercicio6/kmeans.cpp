@@ -25,6 +25,7 @@ double euclideanDistance(const Point& a, const Centroid& b) {
 
 // Assign clusters to points
 void assignClusters(std::vector<Point>& data, std::vector<Centroid>& centroids, int k) {
+    #pragma omp parallel for schedule(static, 256)
     for (size_t i = 0; i < data.size(); i++) {
         double minDist = std::numeric_limits<double>::max();
         int bestCluster = -1;
@@ -44,15 +45,34 @@ void updateCentroids(std::vector<Point>& data, std::vector<Centroid>& centroids,
     std::vector<std::vector<double>> sumCoords(k, std::vector<double>(dimensions, 0.0));
     std::vector<int> count(k, 0);
 
-    for (size_t i = 0; i < data.size(); i++) {
-        int cluster = data[i].cluster;
-        count[cluster]++;
-        
-        for (int d = 0; d < dimensions; d++) {
-            sumCoords[cluster][d] += data[i].coords[d];
+    // Create thread-local storage for reduction
+    #pragma omp parallel
+    {
+        std::vector<std::vector<double>> localSumCoords(k, std::vector<double>(dimensions, 0.0));
+        std::vector<int> localCount(k, 0);
+
+        #pragma omp for nowait
+        for (size_t i = 0; i < data.size(); i++) {
+            int cluster = data[i].cluster;
+            localCount[cluster]++;
+            
+            for (int d = 0; d < dimensions; d++) {
+                localSumCoords[cluster][d] += data[i].coords[d];
+            }
+        }
+
+        #pragma omp critical
+        {
+            for (int j = 0; j < k; j++) {
+                count[j] += localCount[j];
+                for (int d = 0; d < dimensions; d++) {
+                    sumCoords[j][d] += localSumCoords[j][d];
+                }
+            }
         }
     }
 
+    //#pragma omp parallel for
     for (int j = 0; j < k; j++) {
         if (count[j] > 0) {
             for (int d = 0; d < dimensions; d++) {
@@ -99,6 +119,7 @@ int main() {
         return -1;
     }
 
+    omp_set_num_threads(omp_get_max_threads());
     // Start timing
     double start_time = get_time();
     kmeans(data, k);
