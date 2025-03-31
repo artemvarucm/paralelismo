@@ -17,7 +17,9 @@ void initializeCentroids(std::vector<Centroid>& centroids, std::vector<Point>& d
 // Compute Euclidean distance for N-dimensional space
 double euclideanDistance(const Point& a, const Centroid& b) {
     double sum = 0.0;
-    for (size_t i = 0; i < a.coords.size(); i++) {
+    int N = a.coords.size();
+    #pragma omp simd reduction(+:sum)
+    for (size_t i = 0; i < N; i++) {
         sum += pow(a.coords[i] - b.coords[i], 2);
     }
     return sqrt(sum);
@@ -45,7 +47,6 @@ void updateCentroids(std::vector<Point>& data, std::vector<Centroid>& centroids,
     std::vector<std::vector<double>> sumCoords(k, std::vector<double>(dimensions, 0.0));
     std::vector<int> count(k, 0);
 
-    // Create thread-local storage for reduction
     #pragma omp parallel
     {
         std::vector<std::vector<double>> localSumCoords(k, std::vector<double>(dimensions, 0.0));
@@ -56,6 +57,7 @@ void updateCentroids(std::vector<Point>& data, std::vector<Centroid>& centroids,
             int cluster = data[i].cluster;
             localCount[cluster]++;
             
+            #pragma omp simd
             for (int d = 0; d < dimensions; d++) {
                 localSumCoords[cluster][d] += data[i].coords[d];
             }
@@ -65,6 +67,7 @@ void updateCentroids(std::vector<Point>& data, std::vector<Centroid>& centroids,
         {
             for (int j = 0; j < k; j++) {
                 count[j] += localCount[j];
+                #pragma omp simd
                 for (int d = 0; d < dimensions; d++) {
                     sumCoords[j][d] += localSumCoords[j][d];
                 }
@@ -72,9 +75,10 @@ void updateCentroids(std::vector<Point>& data, std::vector<Centroid>& centroids,
         }
     }
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (int j = 0; j < k; j++) {
         if (count[j] > 0) {
+            #pragma omp simd
             for (int d = 0; d < dimensions; d++) {
                 centroids[j].coords[d] = sumCoords[j][d] / count[j];
             }
