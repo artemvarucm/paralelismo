@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 using namespace std;
+#define MIN_TAREAS 25 // para no crear demasiadas tareas
 
 void init(int arr[], int n){
 //	srand((unsigned)time(0));
@@ -50,17 +51,23 @@ void quickSort(int arr[], int low, int high){
 	if(low < high){
 		int pivot = arr[high];
 		int pos = partition(arr, low, high, pivot);
-		
-		#pragma omp task shared(arr) firstprivate(low) 
-		{
+
+		if (high - low < MIN_TAREAS) {
 			quickSort(arr, low, pos-1);
-		}
-		#pragma omp task shared (arr) firstprivate(high)
-		{
 			quickSort(arr, pos+1, high);
+		} else {
+			
+			#pragma omp task shared(arr) firstprivate(low) 
+			{
+				quickSort(arr, low, pos-1);
+			}
+			#pragma omp task shared (arr) firstprivate(high)
+			{
+				quickSort(arr, pos+1, high);
+			}
+			
+			#pragma omp taskwait
 		}
-		
-		#pragma omp taskwait
 	}
 }
 
