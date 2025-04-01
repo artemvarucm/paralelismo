@@ -18,7 +18,7 @@ void initializeCentroids(std::vector<Centroid>& centroids, std::vector<Point>& d
 double euclideanDistance(const Point& a, const Centroid& b) {
     double sum = 0.0;
     int N = a.coords.size();
-    #pragma omp simd reduction(+:sum)
+    // se vectoriza automaticamente
     for (size_t i = 0; i < N; i++) {
         sum += pow(a.coords[i] - b.coords[i], 2);
     }
