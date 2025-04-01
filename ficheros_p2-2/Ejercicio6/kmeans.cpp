@@ -3,7 +3,7 @@
 
 #include "csv_dataset.h"
 #include "extra.h"
-
+#define MIN_ROWS 500 // para hacer mejor rendimiento en datos pequeños
 
 void initializeCentroids(std::vector<Centroid>& centroids, std::vector<Point>& data, int k) {
     srand(42);
@@ -27,7 +27,7 @@ double euclideanDistance(const Point& a, const Centroid& b) {
 
 // Assign clusters to points
 void assignClusters(std::vector<Point>& data, std::vector<Centroid>& centroids, int k) {
-    #pragma omp parallel for schedule(static, 256)
+    #pragma omp parallel for schedule(static, 256) if (data.size() > MIN_ROWS)
     for (size_t i = 0; i < data.size(); i++) {
         double minDist = std::numeric_limits<double>::max();
         int bestCluster = -1;
@@ -47,40 +47,59 @@ void updateCentroids(std::vector<Point>& data, std::vector<Centroid>& centroids,
     std::vector<std::vector<double>> sumCoords(k, std::vector<double>(dimensions, 0.0));
     std::vector<int> count(k, 0);
 
-    #pragma omp parallel
-    {
-        std::vector<std::vector<double>> localSumCoords(k, std::vector<double>(dimensions, 0.0));
-        std::vector<int> localCount(k, 0);
-
-        #pragma omp for nowait
+    if (data.size() < MIN_ROWS) {
         for (size_t i = 0; i < data.size(); i++) {
             int cluster = data[i].cluster;
-            localCount[cluster]++;
+            count[cluster]++;
             
-            #pragma omp simd
             for (int d = 0; d < dimensions; d++) {
-                localSumCoords[cluster][d] += data[i].coords[d];
+                sumCoords[cluster][d] += data[i].coords[d];
             }
         }
 
-        #pragma omp critical
-        {
-            for (int j = 0; j < k; j++) {
-                count[j] += localCount[j];
-                #pragma omp simd
+        for (int j = 0; j < k; j++) {
+            if (count[j] > 0) {
                 for (int d = 0; d < dimensions; d++) {
-                    sumCoords[j][d] += localSumCoords[j][d];
+                    centroids[j].coords[d] = sumCoords[j][d] / count[j];
                 }
             }
         }
-    }
+    } else {
+        #pragma omp parallel
+        {
+            std::vector<std::vector<double>> localSumCoords(k, std::vector<double>(dimensions, 0.0));
+            std::vector<int> localCount(k, 0);
 
-    #pragma omp parallel for
-    for (int j = 0; j < k; j++) {
-        if (count[j] > 0) {
-            #pragma omp simd
-            for (int d = 0; d < dimensions; d++) {
-                centroids[j].coords[d] = sumCoords[j][d] / count[j];
+            #pragma omp for nowait
+            for (size_t i = 0; i < data.size(); i++) {
+                int cluster = data[i].cluster;
+                localCount[cluster]++;
+                
+                #pragma omp simd
+                for (int d = 0; d < dimensions; d++) {
+                    localSumCoords[cluster][d] += data[i].coords[d];
+                }
+            }
+
+            #pragma omp critical
+            {
+                for (int j = 0; j < k; j++) {
+                    count[j] += localCount[j];
+                    #pragma omp simd
+                    for (int d = 0; d < dimensions; d++) {
+                        sumCoords[j][d] += localSumCoords[j][d];
+                    }
+                }
+            }
+        
+            #pragma omp parallel for
+            for (int j = 0; j < k; j++) {
+                if (count[j] > 0) {
+                    #pragma omp simd
+                    for (int d = 0; d < dimensions; d++) {
+                        centroids[j].coords[d] = sumCoords[j][d] / count[j];
+                    }
+                }
             }
         }
     }
