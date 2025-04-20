@@ -17,16 +17,14 @@ def multiply_matrices_flat(A, B, N):
 @njit
 def multiply_matrices_gpu(A, B, N):
     result = np.zeros(N * N)
-    with openmp("target teams distribute parallel for collapse(2) \
-                map(to: A[:N*N], B[:N*N]) \
-                map(from: result[:N*N])"):
+    with openmp("target teams distribute parallel for collapse(2) map(to: A, B) map(from: result)"):
         for i in range(N):
             for j in range(N):
                 sum_val = 0.0
                 for k in range(N):
                     sum_val += A[i * N + k] * B[k * N + j]
                 result[i * N + j] = sum_val
-    
+
     return result
 
 # Size of the matrices (you can adjust to test performance)
