@@ -54,9 +54,9 @@ float* load_weights(const string& filename, int* size) {
 
     return data;
 }
-
+#pragma omp declare target
 void conv2d(float* input, float* output, float* kernel, int height, int width, float bias) {
-
+    #pragma omp target teams distribute parallel for collapse(2)
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
             float sum = 0.0f;
@@ -75,10 +75,12 @@ void conv2d(float* input, float* output, float* kernel, int height, int width, f
         }
     }
 }
+#pragma omp end declare target
 
+#pragma omp declare target
 // Max Pooling 2x2 with stride=2
 void maxpool2d(float* input, float* output, int height, int width) {
-
+    #pragma omp target teams distribute parallel for collapse(2)
     for (int i = 0; i < height/2; ++i) {
         for (int j = 0; j < width/2; ++j) {
             float max_val = -3.4e38;
@@ -97,19 +99,22 @@ void maxpool2d(float* input, float* output, int height, int width) {
         }
     }
 }
+#pragma omp end declare target
 
+#pragma omp declare target
 // Fully connected layer
 void fully_connected(float* input, float* weights, float* biases, float* output, int fc_output_size, int fc_input_size) {
-
-    for (int i = 0; i < fc_output_size; i++) {
-        float sum = 0.0f;
-        for (int j = 0; j < fc_input_size; j++) {
-            sum += input[j] * weights[i * fc_input_size + j];
+    // #pragma omp target teams distribute parallel for //error de compliacion
+    //Mapear los datos una sola vez
+        for (int i = 0; i < fc_output_size; i++) {
+            float sum = 0.0f;
+            for (int j = 0; j < fc_input_size; j++) {
+                sum += input[j] * weights[i * fc_input_size + j];
+            }
+            output[i] = sum + biases[i];
         }
-        output[i] = sum + biases[i];
     }
-}
-
+#pragma omp end declare target
 // Load and normalize image to [-1, 1], return 1D vector
 #include <png.h>
 
@@ -228,12 +233,29 @@ int main() {
     double t0 = get_ms();
 
     ///////////////////////////////////////////////////////////////////// 
-    // Forward pass
-    conv2d(input, conv_out, conv1_weights, height, width, *conv1_biases);
+    // Forward pass       
+    #pragma omp target enter data map(to:input[:width*height])
+    #pragma omp target enter data map(alloc:conv_out[:width*height])
+    #pragma omp target enter data map(to:conv1_weights[:size_conv1_weights])
+    #pragma omp target enter data map(to:conv1_biases[:size_conv1_biases])
+    #pragma omp target enter data map(to:fc1_weights[:size_fc1_weights])
+    #pragma omp target enter data map(to:fc1_biases[:size_fc1_biases])
 
+    conv2d(input, conv_out, conv1_weights, height, width, *conv1_biases);
+    #pragma omp target exit data map(delete:conv1_weights[:size_conv1_weights])
+    #pragma omp target exit data map(delete:conv1_biases[:size_conv1_biases])
+    #pragma omp target exit data map(delete:fc1_weights[:size_fc1_weights])
+    #pragma omp target exit data map(delete:fc1_biases[:size_fc1_biases])
+
+
+    #pragma omp target enter data map(alloc:pooled[:(width/2)*(height/2)])
     maxpool2d(conv_out, pooled, height, width);
 
+    #pragma omp target enter data map(alloc:output[:size_fc1_biases])
     fully_connected(pooled, fc1_weights, fc1_biases, output, size_fc1_biases, fc_input_size);
+    #pragma omp target exit data map(delete:conv_out[:width*height])
+    #pragma omp target exit data map(delete:pooled[:(width/2)*(height/2)])
+    #pragma omp target exit data map(from:output[:size_fc1_biases])
 
     // Get end time
     double t1 = get_ms();
