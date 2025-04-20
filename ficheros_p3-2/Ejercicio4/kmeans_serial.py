@@ -2,22 +2,28 @@ import numpy as np
 import pandas as pd
 import time
 from sklearn.preprocessing import StandardScaler
+from numba import njit, get_num_threads, get_thread_id
+from numba.openmp import openmp_context as openmp
+
+#from numba import set_num_threads
+#set_num_threads(4)
 
 # --- Custom KMeans implementation ---
+@njit
 def compute_distances(data, centroids, labels):
     n_samples, n_features = data.shape
     k = centroids.shape[0]
-
-    for i in range(n_samples):
-        min_dist = np.inf
-        for j in range(k):
-            dist = 0.0
-            for f in range(n_features):
-                diff = data[i, f] - centroids[j, f]
-                dist += diff * diff
-            if dist < min_dist:
-                min_dist = dist
-                labels[i] = j
+    with openmp("parallel for schedule(static, 256)"):
+        for i in range(n_samples):
+            min_dist = np.inf
+            for j in range(k):
+                dist = 0.0
+                for f in range(n_features):
+                    diff = data[i, f] - centroids[j, f]
+                    dist += diff * diff
+                if dist < min_dist:
+                    min_dist = dist
+                    labels[i] = j
 
 def update_centroids(data, labels, k):
     n_samples, n_features = data.shape
