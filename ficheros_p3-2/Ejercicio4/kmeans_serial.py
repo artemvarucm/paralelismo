@@ -25,21 +25,34 @@ def compute_distances(data, centroids, labels):
                     min_dist = dist
                     labels[i] = j
 
+@njit
 def update_centroids(data, labels, k):
     n_samples, n_features = data.shape
     new_centroids = np.zeros((k, n_features))
     counts = np.zeros(k)
+    n_threads = get_num_threads()
+    local_counts = np.zeros((n_threads, k))
+    local_centroids = np.zeros((n_threads, k, n_features))
+    with openmp("parallel for shared(local_centroids, local_counts, data, labels) private(c, f, thread_num)"):
+        for i in range(n_samples):
+            c = labels[i]
+            thread_num = get_thread_id()
+            with openmp("critical"):
+                local_counts[thread_num, c] += 1
+                for f in range(n_features):
+                    local_centroids[thread_num, c, f] += data[i, f]
+        
+    with openmp("parallel for firstprivate(n_threads)"):
+        for j in range(k):
+            for t in range(n_threads):
+                new_centroids[j] += local_centroids[t, j]
+                counts[j] += local_counts[t, j]
 
-    for i in range(n_samples):
-        c = labels[i]
-        for f in range(n_features):
-            new_centroids[c, f] += data[i, f]
-        counts[c] += 1
-
-    for j in range(k):
-        if counts[j] > 0:
-            for f in range(n_features):
-                new_centroids[j, f] /= counts[j]
+    with openmp("parallel for firstprivate(n_features)"):
+        for j in range(k):
+            if counts[j] > 0:
+                for f in range(n_features):
+                    new_centroids[j, f] /= counts[j]
 
     return new_centroids
 
@@ -72,6 +85,6 @@ end_custom = time.time()
 
 
 # --- Results ---
+#print(custom_centroids)
 print("Custom KMeans execution time:", round(end_custom - start_custom, 4), "seconds")
 print("\nFirst 10 labels (Custom): ", custom_labels[:10])
-
