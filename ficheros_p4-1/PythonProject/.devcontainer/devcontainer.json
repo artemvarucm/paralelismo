@@ -1,0 +1,12 @@
+{
+    "name": "python-container",
+    "image": "ray-os",
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "extensions": [
+                "esbenp.prettier-vscode",
+                "donjayamanne.python-extension-pack",
+                "ms-toolsai.jupyter",
+        ]
+}

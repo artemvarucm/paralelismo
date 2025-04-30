@@ -1,0 +1,17 @@
+gym >= 0.17.2
+numpy >= 1.18.5
+pandas
+requests
+scikit-learn
+ray[default, tune, rllib, serve]
+tune-sklearn
+tensorboard >= 2.3
+tensorflow >= 2.3
+jupyter
+jupyterlab
+pillow
+transformers
+tf-keras
+torch
+datasets
+hf_xet
