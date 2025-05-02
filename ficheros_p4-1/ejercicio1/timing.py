@@ -6,8 +6,16 @@ from multiprocessing import Process
 N = 5
 
 #def tarea():
- #   time.sleep(1)
+#    time.sleep(1)
 
+"""
+1.
+Tiempo con hilos: 1.0080153942108154
+Tiempo con procesos: 1.0276131629943848
+2.
+Tiempo con hilos: 1.5023441314697266
+Tiempo con procesos: 0.4603893756866455
+"""
 def tarea():
     suma = 0
     for i in range(10**7):
