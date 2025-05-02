@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from socket import *
 import pandas as pd
 import click
@@ -21,8 +23,12 @@ def manejar_cliente(conn, addr):
     else:
         print(f"Received: {data}", end="")
         data_split = data.split(":")
-        if len(data_split) != 2 or data_split[0] not in CITIES or data_split[1].strip() not in MONTHS:
-            respuesta = "Solicitud incorrecta\n"
+        if len(data_split) != 2:
+            respuesta = "Wrong format, should be city:month\n"
+        elif data_split[1].strip() not in MONTHS:
+            respuesta = "Wrong month\n"
+        elif data_split[0] not in CITIES:
+            respuesta = "Unknown city\n"
         else:
             respuesta = f"{str(temperaturas_diccionario[data_split[0]][data_split[1].strip()])}\n"
         conn.send(respuesta.encode("utf-8")) 
@@ -34,20 +40,24 @@ def manejar_cliente(conn, addr):
 
 def main(host, puerto):
     s = socket(AF_INET, SOCK_STREAM)
+    s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     s.bind((host, puerto))
     s.listen(1)
     print(f"Server listening on {host}:{puerto}")
+    try:
+        (conn, addr) = s.accept() # returns new socket and addr. client
+        print(f"Accepted connection from {addr}")
+        print(f"Handling connection from {addr}")
     
-    (conn, addr) = s.accept() # returns new socket and addr. client
-    print(f"Accepted connection from {addr}")
-    print(f"Handling connection from {addr}")
-   
-    while True: # forever
-        activo = manejar_cliente(conn, addr)
-        if not activo:
-            (conn, addr) = s.accept()
-            print(f"Accepted connection from {addr}")
-            print(f"Handling connection from {addr}")
+        while True: # forever
+            activo = manejar_cliente(conn, addr)
+            if not activo:
+                (conn, addr) = s.accept()
+                print(f"Accepted connection from {addr}")
+                print(f"Handling connection from {addr}")
+    finally:
+        s.close()
+        print("Server socket closed.")
         
 
 if __name__ == "__main__":
