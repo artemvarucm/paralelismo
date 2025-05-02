@@ -1,7 +1,7 @@
 from socket import *
 import pandas as pd
 import click
-import threading
+import multiprocessing
 
 CITIES = ['Madrid', 'Rome', 'Berlin', 'Paris']
 MONTHS = [str(m) for m in range(1, 13)]
@@ -43,8 +43,8 @@ def main(host, puerto):
         (conn, addr) = s.accept() # returns new socket and addr. client
         print(f"Accepted connection from {addr}")
         print(f"Handling connection from {addr}")
-        t = threading.Thread(target=manejar_cliente, args=(conn, addr))
-        t.start()
+        p = multiprocessing.Process(target=manejar_cliente, args=(conn, addr))
+        p.start()
         
 
 if __name__ == "__main__":
