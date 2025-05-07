@@ -44,6 +44,8 @@ def client_thread(host, port, delay_ms):
             ##      Introducir retardo indicado por el usuario
             time.sleep(delay_ms / 1000)
 
+        s.send('END'.encode("utf-8"))
+        response = s.recv(1024).decode("utf-8")
     except Exception as e:
         print(f"Error en cliente: {e}")
 
