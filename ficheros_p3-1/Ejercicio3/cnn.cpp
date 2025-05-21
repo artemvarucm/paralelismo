@@ -54,7 +54,7 @@ float* load_weights(const string& filename, int* size) {
 
     return data;
 }
-#pragma omp declare target
+//#pragma omp declare target
 void conv2d(float* input, float* output, float* kernel, int height, int width, float bias) {
     #pragma omp target teams distribute parallel for collapse(2)
     for (int i = 0; i < height; ++i) {
@@ -75,9 +75,9 @@ void conv2d(float* input, float* output, float* kernel, int height, int width, f
         }
     }
 }
-#pragma omp end declare target
+//#pragma omp end declare target
 
-#pragma omp declare target
+//#pragma omp declare target
 // Max Pooling 2x2 with stride=2
 void maxpool2d(float* input, float* output, int height, int width) {
     #pragma omp target teams distribute parallel for collapse(2)
@@ -99,9 +99,9 @@ void maxpool2d(float* input, float* output, int height, int width) {
         }
     }
 }
-#pragma omp end declare target
+//#pragma omp end declare target
 
-#pragma omp declare target
+//#pragma omp declare target
 // Fully connected layer
 void fully_connected(float* input, float* weights, float* biases, float* output, int fc_output_size, int fc_input_size) {
     #pragma omp target teams distribute parallel for
@@ -114,7 +114,7 @@ void fully_connected(float* input, float* weights, float* biases, float* output,
             output[i] = sum + biases[i];
         }
     }
-#pragma omp end declare target
+//#pragma omp end declare target
 // Load and normalize image to [-1, 1], return 1D vector
 #include <png.h>
 
