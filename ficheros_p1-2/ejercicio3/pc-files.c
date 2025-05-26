@@ -68,6 +68,16 @@ int main(int argc, char* argv[])
         return 1; 
     } 
 
+	if (pthread_cond_init(&cond_prod, NULL) != 0) {
+		perror("Producer condition variable init failed");
+		return 1;
+	}
+
+	if (pthread_cond_init(&cond_cons, NULL) != 0) {
+		perror("Consumer condition variable init failed");
+		return 1;
+	}
+
 	pthread_create(&productor, NULL, producir, fdIn);
 	pthread_create(&consumidor, NULL, consumir, fdOut);
 
@@ -75,6 +85,8 @@ int main(int argc, char* argv[])
 	pthread_join(consumidor, NULL);
 
 	pthread_mutex_destroy(&lock);
+	pthread_cond_destroy(&cond_prod);
+	pthread_cond_destroy(&cond_cons);
 
 	fclose(fdOut);
 	if (input) {
